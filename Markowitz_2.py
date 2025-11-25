@@ -70,7 +70,33 @@ class MyPortfolio:
         """
         TODO: Complete Task 4 Below
         """
+        self.portfolio_weights.fillna(0.0, inplace=True)
+
+        mom_window = 126  # 動能看過去半年
+        top_n = 4         # 只持有 4 檔
         
+        for i in range(2, len(self.price)):
+            
+            start_idx_vol = max(0, i - self.lookback)
+            R_vol = self.returns[assets].iloc[start_idx_vol : i]
+            
+            sigma = R_vol.std()
+            sigma = sigma.replace(0, np.inf).fillna(np.inf)
+            inv_sigma = 1.0 / sigma
+            
+            target_assets = assets
+            
+            if i >= mom_window:
+                start_idx_mom = i - mom_window
+                R_mom = self.returns[assets].iloc[start_idx_mom : i]
+                momentum = (1 + R_mom).prod() - 1
+                target_assets = momentum.nlargest(top_n).index
+            
+            selected_inv_sigma = inv_sigma[target_assets]
+            
+            if selected_inv_sigma.sum() > 0:
+                weights = selected_inv_sigma / selected_inv_sigma.sum()
+                self.portfolio_weights.loc[self.price.index[i], target_assets] = weights
         
         """
         TODO: Complete Task 4 Above
